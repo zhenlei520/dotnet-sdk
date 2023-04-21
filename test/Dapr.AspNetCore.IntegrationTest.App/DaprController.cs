@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------
 // Copyright 2021 The Dapr Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 
 namespace Dapr.AspNetCore.IntegrationTest.App
 {
-    using System;
     using System.Text;
     using System.Threading.Tasks;
     using Dapr;
@@ -61,10 +60,45 @@ namespace Dapr.AspNetCore.IntegrationTest.App
         {
         }
 
+        [BulkSubscribe("F")]
         [Topic("pubsub", "F")]
         [Topic("pubsub", "F.1", true)]
         [HttpPost("/multiTopicAttr")]
         public void MultipleTopics()
+        {
+        }
+
+        [BulkSubscribe("G", 300)]
+        [Topic("pubsub", "G", "deadLetterTopicName", false)]
+        [HttpPost("/G")]
+        public void TopicG()
+        {
+        }
+
+        [BulkSubscribe("metadata.1", 500, 2000)]
+        [Topic("pubsub", "metadata", new string[1] { "id1" })]
+        [Topic("pubsub", "metadata.1", true)]
+        [HttpPost("/multiMetadataTopicAttr")]
+        [TopicMetadata("n1", "v1")]
+        [TopicMetadata("id1", "n2", "v2")]
+        [TopicMetadata("id1", "n2", "v3")]
+        public void MultipleMetadataTopics()
+        {
+        }
+
+        [Topic("pubsub", "metadataseparator", metadataSeparator: "|")]
+        [HttpPost("/topicmetadataseparatorattr")]
+        [TopicMetadata("n1", "v1")]
+        [TopicMetadata("n1", "v2")]
+        public void TopicMetadataSeparator()
+        {
+        }
+
+        [Topic("pubsub", "metadataseparatorbyemptytring")]
+        [HttpPost("/topicmetadataseparatorattrbyemptytring")]
+        [TopicMetadata("n1", "v1")]
+        [TopicMetadata("n1", "")]
+        public void TopicMetadataSeparatorByemptytring ()
         {
         }
 
@@ -112,7 +146,7 @@ namespace Dapr.AspNetCore.IntegrationTest.App
         }
 
         [HttpPost("/echo-user")]
-        public ActionResult<UserInfo> EchoUser([FromQuery]UserInfo user)
+        public ActionResult<UserInfo> EchoUser([FromQuery] UserInfo user)
         {
             // To simulate an action where there's no Dapr attribute, yet MVC still checks the list of available model binder providers.
             return user;

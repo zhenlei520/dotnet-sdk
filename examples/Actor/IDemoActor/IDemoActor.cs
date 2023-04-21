@@ -13,6 +13,7 @@
 
 namespace IDemoActorInterface
 {
+    using System;
     using System.Threading.Tasks;
     using Dapr.Actors;
 
@@ -53,6 +54,13 @@ namespace IDemoActorInterface
         Task RegisterReminder();
 
         /// <summary>
+        /// Registers a reminder.
+        /// </summary>
+        /// <param name="ttl">TimeSpan that dictates when the reminder expires.</param>
+        /// <returns>A task that represents the asynchronous save operation.</returns>
+        Task RegisterReminderWithTtl(TimeSpan ttl);
+
+        /// <summary>
         /// Unregisters the registered reminder.
         /// </summary>
         /// <returns>Task representing the operation.</returns>
@@ -63,6 +71,28 @@ namespace IDemoActorInterface
         /// </summary>
         /// <returns>A task that represents the asynchronous save operation.</returns>
         Task RegisterTimer();
+
+        /// <summary>
+        /// Registers a timer.
+        /// </summary>
+        /// <param name="ttl">Optional TimeSpan that dictates when the timer expires.</param>
+        /// <returns>A task that represents the asynchronous save operation.</returns>
+        Task RegisterTimerWithTtl(TimeSpan ttl);
+        
+        /// <summary>
+        /// Registers a reminder with repetitions.
+        /// </summary>
+        /// <param name="repetitions">The number of repetitions for which the reminder should be invoked.</param>
+        /// <returns>A task that represents the asynchronous save operation.</returns>
+        Task RegisterReminderWithRepetitions(int repetitions);
+        
+        /// <summary>
+        /// Registers a reminder with ttl and repetitions.
+        /// </summary>
+        /// <param name="ttl">TimeSpan that dictates when the timer expires.</param>
+        /// <param name="repetitions">The number of repetitions for which the reminder should be invoked.</param>
+        /// <returns>A task that represents the asynchronous save operation.</returns>
+        Task RegisterReminderWithTtlAndRepetitions(TimeSpan ttl, int repetitions);
 
         /// <summary>
         /// Unregisters the registered timer.

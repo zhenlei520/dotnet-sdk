@@ -70,6 +70,21 @@ namespace DaprDemoActor
             await this.RegisterReminderAsync("TestReminder", null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
         }
 
+        public async Task RegisterReminderWithTtl(TimeSpan ttl)
+        {
+            await this.RegisterReminderAsync("TestReminder", null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), ttl);
+        }
+        
+        public async Task RegisterReminderWithRepetitions(int repetitions)
+        {
+            await this.RegisterReminderAsync("TestReminder", null, TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(1), repetitions);
+        }
+        
+        public async Task RegisterReminderWithTtlAndRepetitions(TimeSpan ttl, int repetitions)
+        {
+            await this.RegisterReminderAsync("TestReminder", null, TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(1), repetitions, ttl);
+        }
+
         public Task UnregisterReminder()
         {
             return this.UnregisterReminderAsync("TestReminder");
@@ -100,6 +115,18 @@ namespace DaprDemoActor
 
             var serializedTimerParams = JsonSerializer.SerializeToUtf8Bytes(timerParams);
             return this.RegisterTimerAsync("TestTimer", nameof(this.TimerCallback), serializedTimerParams, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+        }
+
+        public Task RegisterTimerWithTtl(TimeSpan ttl)
+        {
+            var timerParams = new TimerParams
+            {
+                IntParam = 100,
+                StringParam = "timer test",
+            };
+
+            var serializedTimerParams = JsonSerializer.SerializeToUtf8Bytes(timerParams);
+            return this.RegisterTimerAsync("TestTimer", nameof(this.TimerCallback), serializedTimerParams, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3), ttl);
         }
 
         public Task UnregisterTimer()

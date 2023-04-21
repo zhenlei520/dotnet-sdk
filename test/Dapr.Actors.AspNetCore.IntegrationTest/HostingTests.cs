@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------
 // Copyright 2021 The Dapr Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -54,7 +56,18 @@ namespace Dapr.Actors.AspNetCore.IntegrationTest
         {
             using var factory = new AppWebApplicationFactory();
 
-            var httpClient = factory.CreateClient();
+            var httpClient = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = false });
+            var response = await httpClient.GetAsync("/healthz");
+            await Assert2XXStatusAsync(response);
+        }
+
+        [Fact]
+        public async Task ActorsHealthz_ShouldNotRequireAuthorization()
+        {
+            using var host = CreateHost<AuthorizedRoutesStartup>();
+            var server = host.GetTestServer();
+
+            var httpClient = server.CreateClient();
             var response = await httpClient.GetAsync("/healthz");
             await Assert2XXStatusAsync(response);
         }
@@ -131,6 +144,28 @@ namespace Dapr.Actors.AspNetCore.IntegrationTest
                 app.UseEndpoints(endpoints =>
                 {
                     endpoints.MapActorsHandlers();
+                });
+            }
+        }
+
+        private class AuthorizedRoutesStartup
+        {
+            public void ConfigureServices(IServiceCollection services)
+            {
+                services.AddActors(default);
+                services.AddAuthentication().AddDapr(options => options.Token = "abcdefg");
+
+                services.AddAuthorization(o => o.AddDapr());
+            }
+
+            public void Configure(IApplicationBuilder app)
+            {
+                app.UseRouting();
+                app.UseAuthentication();
+                app.UseAuthorization();
+                app.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapActorsHandlers().RequireAuthorization("Dapr");
                 });
             }
         }

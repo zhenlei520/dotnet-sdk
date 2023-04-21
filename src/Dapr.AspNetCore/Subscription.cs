@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------
 // Copyright 2021 The Dapr Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,17 +44,31 @@ namespace Dapr
         /// Gets or sets the metadata.
         /// </summary>
         public Metadata Metadata { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the deadletter topic.
+        /// </summary>
+        public string DeadLetterTopic { get; set; }
+
+        /// <summary>
+        /// Gets or sets the bulk subscribe options.
+        /// </summary>
+        public DaprTopicBulkSubscribe BulkSubscribe { get; set; }
     }
 
     /// <summary>
     /// This class defines the metadata for subscribe endpoint.
     /// </summary>
-    internal class Metadata
+    internal class Metadata : Dictionary<string, string>
     {
+        public Metadata() { }
+
+        public Metadata(IDictionary<string, string> dictionary) : base(dictionary) { }
+
         /// <summary>
-        /// Gets or sets the raw payload
+        /// RawPayload key
         /// </summary>
-        public string RawPayload { get; set; }
+        internal const string RawPayload = "rawPayload";
     }
 
     internal class Routes
@@ -81,5 +95,24 @@ namespace Dapr
         /// Gets or sets the path of the route.
         /// </summary>
         public string Path { get; set; }
+    }
+
+    internal class DaprTopicBulkSubscribe
+    {
+        /// <summary>
+        /// Gets or sets whether bulk subscribe option is enabled for a topic.
+        /// </summary>
+        public bool Enabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of messages in a bulk message from the message bus.
+        /// </summary>
+        public int MaxMessagesCount { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the Maximum duration to wait for maxBulkSubCount messages by the message bus
+        /// before sending the messages to Dapr.
+        /// </summary>
+        public int MaxAwaitDurationMs { get; set; }
     }
 }

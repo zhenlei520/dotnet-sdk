@@ -1,4 +1,4 @@
-// ------------------------------------------------------------------------
+﻿// ------------------------------------------------------------------------
 // Copyright 2021 The Dapr Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ namespace Dapr.Client.Test
     using Dapr.Client.Autogen.Grpc.v1;
     using FluentAssertions;
     using Grpc.Core;
-    using Grpc.Net.Client;
     using Moq;
     using Xunit;
 
@@ -138,6 +137,64 @@ namespace Dapr.Client.Test
         }
 
         [Fact]
+        public async Task PublishEventAsync_CanPublishCloudEventWithData()
+        {
+            await using var client = TestClient.CreateForDaprClient();
+
+            var publishData = new PublishData() { PublishObjectParameter = "testparam" };
+            var cloudEvent = new CloudEvent<PublishData>(publishData)
+            {
+                Source = new Uri("urn:testsource"),
+                Type = "testtype",
+                Subject = "testsubject",
+            };
+            var request = await client.CaptureGrpcRequestAsync(async daprClient =>
+            {
+                await daprClient.PublishEventAsync<CloudEvent<PublishData>>(TestPubsubName, "test", cloudEvent);
+            });
+
+            request.Dismiss();
+
+            var envelope = await request.GetRequestEnvelopeAsync<PublishEventRequest>();
+            var jsonFromRequest = envelope.Data.ToStringUtf8();
+
+            envelope.DataContentType.Should().Be("application/cloudevents+json");
+            envelope.PubsubName.Should().Be(TestPubsubName);
+            envelope.Topic.Should().Be("test");
+            jsonFromRequest.Should().Be(JsonSerializer.Serialize(cloudEvent, client.InnerClient.JsonSerializerOptions));
+            envelope.Metadata.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task PublishEventAsync_CanPublishCloudEventWithNoContent()
+        {
+            await using var client = TestClient.CreateForDaprClient();
+
+            var publishData = new PublishData() { PublishObjectParameter = "testparam" };
+            var cloudEvent = new CloudEvent
+            {
+                Source = new Uri("urn:testsource"),
+                Type = "testtype",
+                Subject = "testsubject",
+            };
+            var request = await client.CaptureGrpcRequestAsync(async daprClient =>
+            {
+                await daprClient.PublishEventAsync<CloudEvent>(TestPubsubName, "test", cloudEvent);
+            });
+
+            request.Dismiss();
+
+            var envelope = await request.GetRequestEnvelopeAsync<PublishEventRequest>();
+            var jsonFromRequest = envelope.Data.ToStringUtf8();
+
+            envelope.DataContentType.Should().Be("application/cloudevents+json");
+            envelope.PubsubName.Should().Be(TestPubsubName);
+            envelope.Topic.Should().Be("test");
+            jsonFromRequest.Should().Be(JsonSerializer.Serialize(cloudEvent, client.InnerClient.JsonSerializerOptions));
+            envelope.Metadata.Count.Should().Be(0);
+        }
+
+        [Fact]
         public async Task PublishEventAsync_WithCancelledToken()
         {
             await using var client = TestClient.CreateForDaprClient();
@@ -165,11 +222,37 @@ namespace Dapr.Client.Test
                 .Setup(m => m.PublishEventAsync(It.IsAny<Autogen.Grpc.v1.PublishEventRequest>(), It.IsAny<CallOptions>()))
                 .Throws(rpcException);
 
-            var ex = await Assert.ThrowsAsync<DaprException>(async () => 
+            var ex = await Assert.ThrowsAsync<DaprException>(async () =>
             {
                 await client.DaprClient.PublishEventAsync("test", "test");
             });
             Assert.Same(rpcException, ex.InnerException);
+        }
+
+        [Fact]
+        public async Task PublishEventAsync_CanPublishWithRawData()
+        {
+            await using var client = TestClient.CreateForDaprClient();
+
+            var publishData = new PublishData() { PublishObjectParameter = "testparam" };
+            var publishBytes = JsonSerializer.SerializeToUtf8Bytes(publishData);
+            var request = await client.CaptureGrpcRequestAsync(async daprClient =>
+            {
+                await daprClient.PublishByteEventAsync(TestPubsubName, "test", publishBytes.AsMemory());
+            });
+
+            request.Dismiss();
+
+            var envelope = await request.GetRequestEnvelopeAsync<PublishEventRequest>();
+            var jsonFromRequest = envelope.Data.ToStringUtf8();
+
+            envelope.DataContentType.Should().Be("application/json");
+            envelope.PubsubName.Should().Be(TestPubsubName);
+            envelope.Topic.Should().Be("test");
+            jsonFromRequest.Should().Be(JsonSerializer.Serialize(publishData));
+            // The default serializer forces camel case, so this should be different from our serialization above.
+            jsonFromRequest.Should().NotBe(JsonSerializer.Serialize(publishBytes, client.InnerClient.JsonSerializerOptions));
+            envelope.Metadata.Count.Should().Be(0);
         }
 
         private class PublishData

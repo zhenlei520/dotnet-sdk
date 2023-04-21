@@ -11,6 +11,7 @@
 // limitations under the License.
 // ------------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Dapr.Actors;
 
@@ -19,6 +20,12 @@ namespace Dapr.E2E.Test.Actors.Reminders
     public interface IReminderActor : IPingActor, IActor
     {
         Task StartReminder(StartReminderOptions options);
+
+        Task StartReminderWithTtl(TimeSpan ttl);
+
+        Task StartReminderWithRepetitions(int repetitions);
+        
+        Task StartReminderWithTtlAndRepetitions(TimeSpan ttl, int repetitions);
 
         Task<State> GetState();
     }
